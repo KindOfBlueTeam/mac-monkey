@@ -49,9 +49,28 @@ It exposes system health via both a terminal view and a local web dashboard.
 </p>
 
 <p>
-Nothing is sent off the machine.  
+<strong>Safety:</strong> Nothing is sent off the machine.  
 No changes are made unless <em>you</em> explicitly run commands yourself.
 </p>
+
+<hr>
+
+<h2>Quick Start</h2>
+
+<h3>Setup</h3>
+
+<ol>
+  <li>Clone the repo: <code>git clone https://github.com/KindOfBlueTeam/MacMonkey.git && cd MacMonkey/mm</code></li>
+  <li>Create a Python virtual environment: <code>python3 -m venv .venv</code></li>
+  <li>Activate it: <code>source .venv/bin/activate</code></li>
+  <li>Install dependencies: <code>pip install -r requirements.txt</code></li>
+</ol>
+
+<h3>First Run</h3>
+
+<pre>python3 mm_main.py --mode web</pre>
+
+<p>Open your browser to <code>http://127.0.0.1:8765</code></p>
 
 <hr>
 
@@ -62,20 +81,30 @@ No changes are made unless <em>you</em> explicitly run commands yourself.
 <pre>python3 mm_main.py --mode web</pre>
 
 <p>
-Starts a local web server on:
+Starts a local web server on <code>http://127.0.0.1:8765</code> (by default).
 </p>
+
+<h4>Web mode options:</h4>
 
 <ul>
-  <li>Main UI: <a href="/">/</a></li>
-  <li>JSON payload: <a href="/payload">/payload</a></li>
-  <li>Help: <a href="/help">/help</a></li>
+  <li><code>--host &lt;IP&gt;</code> — Bind address (default: 127.0.0.1)</li>
+  <li><code>--port &lt;num&gt;</code> — Port number (default: 8765)</li>
+  <li><code>--interval &lt;sec&gt;</code> — UI refresh interval in seconds (default: 10)</li>
+  <li><code>--debug</code> — Enable debug logging</li>
 </ul>
 
-<p>
-Default listen address:
-</p>
+<h4>Example: Custom host and port</h4>
 
-<pre>http://127.0.0.1:8765</pre>
+<pre>python3 mm_main.py --mode web --host 0.0.0.0 --port 3000 --interval 5</pre>
+
+<h4>Web endpoints:</h4>
+
+<ul>
+  <li><code>/</code> — Main web UI dashboard</li>
+  <li><code>/payload</code> — Full JSON payload (for external tools)</li>
+  <li><code>/help</code> — This help page</li>
+  <li><code>POST /action/networkquality/run</code> — Force re-run network quality check (returns JSON)</li>
+</ul>
 
 <hr>
 
@@ -103,27 +132,47 @@ Useful for debugging and automation.
 
 <h2>Sections Explained</h2>
 
+<h3>Web UI Features</h3>
+
+<ul>
+  <li><strong>Overall Status</strong> — Color-coded summary (OK / WARN / BAD)</li>
+  <li><strong>Sparklines</strong> — Trend charts for metrics (disk free, USB free, CPU, network quality, etc.)</li>
+  <li><strong>Auto-refresh</strong> — Dashboard updates every interval seconds (configurable)</li>
+  <li><strong>Metric bars</strong> — Visual representation of capacity usage</li>
+  <li><strong>ANSI color support</strong> — Messages may include terminal color codes</li>
+</ul>
+
 <h3>Processes</h3>
 <ul>
-  <li>Shows processes exceeding CPU thresholds</li>
-  <li>Only displays the process name (not full paths)</li>
-  <li>Includes trend sparklines in the web UI</li>
+  <li>Shows processes exceeding CPU threshold (50% by default, configurable)</li>
+  <li>Displays top N processes by CPU usage</li>
+  <li>Only shows process names (not full command paths)</li>
+  <li>Trend sparklines in web UI</li>
 </ul>
 
 <h3>Network</h3>
 <ul>
-  <li>Default route detection</li>
-  <li>Active IPv4 interfaces</li>
-  <li>Gateway reachability</li>
-  <li>Egress TCP test</li>
-  <li>DNS resolution check</li>
+  <li><strong>Default route detection</strong> — Checks if a gateway is reachable</li>
+  <li><strong>Active IPv4 interfaces</strong> — Count of active network adapters</li>
+  <li><strong>Gateway ping</strong> — Verifies default gateway responds</li>
+  <li><strong>Egress test</strong> — TCP connectivity to 1.1.1.1:443 (Cloudflare DNS)</li>
+  <li><strong>DNS resolution</strong> — Tests actual name resolution</li>
+  <li><strong>Network quality</strong> — Runs <code>/usr/bin/networkQuality</code> (Apple's built-in tool)
+    <ul>
+      <li>Measures downlink/uplink capacity (Mbps)</li>
+      <li>Responsiveness score</li>
+      <li>Idle latency</li>
+      <li>Results cached for 30 minutes (auto-refresh) or manually via web UI</li>
+    </ul>
+  </li>
 </ul>
 
 <h3>Disk</h3>
 <ul>
   <li>Total and free space</li>
-  <li>Red/green usage bar (5% per segment)</li>
-  <li>Sparkline trend history</li>
+  <li>Status bar showing usage (20 segments)</li>
+  <li>Configurable WARN/BAD thresholds (GB)</li>
+  <li>Sparkline trend history in web UI (last 60 measurements)</li>
 </ul>
 
 <h3>Mounts</h3>
@@ -151,8 +200,10 @@ Useful for debugging and automation.
 <h2>Configuration</h2>
 
 <p>
-MacMonkey supports per-host configuration files.
+MacMonkey is designed to work without configuration (using built-in defaults), but you can customize behavior per host.
 </p>
+
+<h3>Configuration file</h3>
 
 <p>
 File naming convention:
@@ -161,8 +212,10 @@ File naming convention:
 <pre>mm_config.&lt;hostname&gt;.json</pre>
 
 <p>
-If no config file exists, built-in defaults are used and noted in the UI.
+Example: <code>mm_config.mymac.json</code> on hostname "mymac"
 </p>
+
+<h3>Interactive setup</h3>
 
 <p>
 To create or modify a config interactively:
@@ -170,53 +223,63 @@ To create or modify a config interactively:
 
 <pre>python3 mm_setup.py</pre>
 
+<p>
+The setup wizard (SAFE MODE, read-only) lets you configure:
+</p>
+
+<ul>
+  <li><strong>Mount checks</strong> — Which NAS/network mounts are required</li>
+  <li><strong>Disk thresholds</strong> — WARN and BAD free space limits (GB)</li>
+  <li><strong>Process checks</strong> — High CPU threshold %, number of top processes to show</li>
+  <li><strong>USB storage checks</strong> — Which USB volumes are required, free space thresholds</li>
+  <li><strong>Time Machine checks</strong> — Snapshot count WARN/BAD thresholds</li>
+</ul>
+
+<p>
+If no config file exists, built-in defaults are used.
+</p>
+
 <hr>
 
 <h2>Drunken Monkey Mode 🥃</h2>
 
 <p class="warn">
-<strong>Drunken Monkey mode is a simulation.</strong><br>
-It feeds mock data into the MacMonkey UI to demonstrate realistic failure cascades.
+<strong>Drunken Monkey mode is a simulation for demos and testing.</strong><br>
+It feeds mock data into the MacMonkey UI to demonstrate realistic failure cascades and recovery patterns.
 </p>
 
 <pre>python3 mm_drunk.py</pre>
 
 <p>
-Important differences from normal MacMonkey:
+<strong>Important:</strong> This mode only simulates data. It never touches real system state.
+Perfect for:
 </p>
 
 <ul>
-  <li>Uses mock data only</li>
-  <li>Never touches real system state</li>
-  <li>Designed for demos, training, and screenshots</li>
+  <li>Live demos to stakeholders</li>
+  <li>Training and screenshots</li>
+  <li>Testing monitoring integrations</li>
+  <li>UI/UX feedback</li>
 </ul>
 
-<h3>Default port</h3>
+<h3>Available playlists</h3>
 
 <p>
-Drunken Monkey listens on a <strong>different port</strong> to avoid collisions:
-</p>
-
-<pre>http://127.0.0.1:8766</pre>
-
-<p>
-If that port is already in use, it will automatically increment
-(8767, 8768, …) and tell you which one it selected.
-</p>
-
-<h3>Playlists</h3>
-
-<p>
-Failure scenarios are grouped into playlists.
+List all presets:
 </p>
 
 <pre>python3 mm_drunk.py --list-playlists</pre>
 
 <p>
-Start with a specific playlist:
+Playlists include: <code>bad_day</code>, <code>flakey_nas</code>, <code>heavy_workload</code>, <code>no_gateway</code>, <code>tm_silent_fail</code>, <code>usb_full</code>, <code>usb_tm_failure</code>
 </p>
 
-<pre>python3 mm_drunk.py --playlist flakey_nas</pre>
+<h3>Default port</h3>
+
+<p>
+Listens on <code>http://127.0.0.1:8766</code> to avoid collisions with regular MacMonkey (8765).
+If that port is busy, auto-increments (8767, 8768, …).
+</p>
 
 <h3>Drunk mode endpoints</h3>
 
@@ -230,23 +293,95 @@ Start with a specific playlist:
 
 <hr>
 
-<h2>Status Levels</h2>
+<h2>Chaos Mode (Alternative Mock Server)</h2>
+
+<p>
+Similar to Drunken Monkey, but with a different UI and configuration options.
+</p>
+
+<pre>python3 mm_chaos.py --list-playlists</pre>
+
+<pre>python3 mm_chaos.py --playlist flakey_nas --step-seconds 10 --loop</pre>
+
+<p>
+Listens on <code>http://127.0.0.1:8766</code> by default (same as Drunken Monkey, auto-increments if busy).
+</p>
+
+<hr>
+
+<h2>JSON Payload & Integration</h2>
+
+<p>
+The JSON payload is the backbone of MacMonkey. All formats use the same schema:
+</p>
+
+<pre>{
+  "now": "2026-03-25 12:34:56",
+  "overall": "OK",
+  "about": "Description of this payload",
+  "sections": [
+    {
+      "title": "Section Name",
+      "checks": [
+        {
+          "status": "OK|WARN|BAD",
+          "title": "Check Title",
+          "message": "Human-readable message",
+          "metric": 123.4,
+          "metric_unit": "GB",
+          "trend": [120.5, 121.2, 123.4]
+        }
+      ]
+    }
+  ]
+}</pre>
+
+<p>
+Access the payload from:
+</p>
 
 <ul>
-  <li><span style="color:#00ff66">OK</span> — Everything looks normal</li>
-  <li><span class="warn">WARN</span> — Degraded or approaching limits</li>
-  <li><span class="bad">BAD</span> — Immediate attention recommended</li>
+  <li><strong>Web mode:</strong> <code>curl http://127.0.0.1:8765/payload</code></li>
+  <li><strong>CLI mode:</strong> <code>python3 mm_main.py --mode cli</code></li>
+  <li><strong>Programmatically:</strong> <code>from mm_checks import build_payload</code></li>
 </ul>
 
 <hr>
 
-<p>
-MacMonkey is intentionally conservative:
-it reports what it can prove, and avoids guessing.
-</p>
+<h2>Troubleshooting</h2>
+
+<h3>Port already in use</h3>
 
 <p>
-If something is unavailable, it will say so explicitly.
+Specify a different port:
+</p>
+
+<pre>python3 mm_main.py --mode web --port 9999</pre>
+
+<h3>networkQuality not available</h3>
+
+<p>
+The network quality check uses macOS's built-in <code>/usr/bin/networkQuality</code> (available on macOS 12+).
+On older systems, this check will show as unavailable but won't block other checks.
+</p>
+
+<h3>Check mm_log.txt</h3>
+
+<p>
+The web server logs errors to <code>mm_log.txt</code> in the mm directory.
+</p>
+
+<h3>Permissions</h3>
+
+<p>
+MacMonkey uses read-only system calls. If a check fails, it will report the failure gracefully.
+No sudo/admin access is required.
+</p>
+
+<hr>
+
+<p>
+<strong>For more info:</strong> <a href="https://github.com/KindOfBlueTeam/MacMonkey">GitHub Repository</a>
 </p>
 
 </body>
