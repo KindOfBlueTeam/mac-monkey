@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>MacMonkey</title>
+  <style>
+    :root{
+      --bg:#000;
+      --fg:#39ff14;
+      --dim:#1aa30a;
+      --warn:#ffcc00;
+      --bad:#ff3b3b;
+      --panel:#031a03;
+      --border:#0a3d0a;
+    }
+    html,body{
+      margin:0;
+      padding:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    a{color:var(--fg);text-decoration:none;}
+    a:hover{text-decoration:underline;}
+
+    .wrap{max-width:1100px;margin:24px auto;padding:0 16px;}
+
+    /* Header layout (stacked, left-aligned) */
+    .header{
+      display:block;
+      margin-bottom:12px;
+    }
+    .row1{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+    }
+    .title{font-size:28px;font-weight:700;letter-spacing:0.5px;}
+    .sub{
+      color:var(--dim);
+      margin-top:6px;
+      font-size:14px;
+    }
+
+    .toplinks{
+      color:var(--dim);
+      margin:10px 0 18px 0;
+      font-size:14px;
+    }
+
+    .pill{
+      display:inline-block;
+      padding:2px 10px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background:var(--panel);
+      font-size:12px;
+      line-height:18px;
+    }
+    .status-pill.OK{color:var(--fg);}
+    .status-pill.WARN{color:var(--warn);}
+    .status-pill.BAD{color:var(--bad);}
+
+    .section{
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:linear-gradient(180deg, rgba(3,26,3,0.9), rgba(0,0,0,0.8));
+      margin:14px 0;
+      overflow:hidden;
+    }
+    .section-h{
+      padding:10px 12px;
+      border-bottom:1px solid rgba(10,61,10,0.8);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      cursor:pointer;
+      user-select:none;
+    }
+    .section-h .name{font-weight:700;}
+    .section-h .meta{color:var(--dim);font-size:12px;}
+    .section-b{padding:8px 12px;display:none;}
+    .section.open .section-b{display:block;}
+
+    table{width:100%;border-collapse:collapse;}
+    th,td{padding:8px 8px;vertical-align:top;}
+    th{
+      color:var(--dim);
+      font-weight:700;
+      font-size:12px;
+      letter-spacing:0.06em;
+      text-transform:uppercase;
+      border-bottom:1px solid rgba(10,61,10,0.7);
+    }
+    tr + tr td{border-top:1px dashed rgba(10,61,10,0.5);}
+
+    .col-status{width:80px;}
+    .col-trend{width:120px;}
+    .st.OK{color:var(--fg);}
+    .st.WARN{color:var(--warn);}
+    .st.BAD{color:var(--bad);}
+
+    .msg{white-space:pre-wrap;}
+
+    .spark{
+      width:110px;height:18px;
+      border:1px solid rgba(10,61,10,0.7);
+      border-radius:4px;
+      background:rgba(0,0,0,0.5);
+      display:block;
+    }
+
+    .btn{
+      border:1px solid var(--border);
+      background:var(--panel);
+      color:var(--fg);
+      padding:6px 10px;
+      border-radius:999px; /* pill-like */
+      cursor:pointer;
+      font-size:12px;
+      line-height:16px;
+    }
+    .btn:hover{filter:brightness(1.08);}
+    .btn:disabled{
+      opacity:0.55;
+      cursor:default;
+      filter:none;
+    }
+
+    /* colored bar spans (pipes) */
+    .bar-free{color:var(--fg);}
+    .bar-used{color:var(--bad);}
+
+    /* Polling row */
+    .pollrow{
+      margin-top:10px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      font-size:14px;
+    }
+    .pollrow .label{
+      color:var(--dim);
+    }
+    .pollrow .sep{
+      color:var(--dim);
+      padding:0 4px;
+    }
+    .pollrow .choices{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+    }
+    .pollcurrent{
+      color:var(--fg);
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <!-- Row 1 -->
+    <div class="row1">
+      <div class="title">MacMonkey</div>
+      <span class="pill status-pill" id="overallPill">…</span>
+    </div>
+
+    <!-- Row 2 -->
+    <div class="sub" id="subline">Loading…</div>
+
+    <!-- Row 3 -->
+    <div class="pollrow">
+      <span class="label">Polling Period:</span>
+      <span class="pollcurrent" id="pollCurrent">…</span>
+      <span class="sep">|</span>
+      <span class="label">Select Polling Period:</span>
+      <span class="choices" id="pollButtons"></span>
+
+      <span class="sep">|</span>
+      <button class="btn" id="refreshBtn">Refresh</button>
+
+      <span class="sep">|</span>
+      <button class="btn" id="runNetworkQualityBtn" title="Runs networkQuality now (may take up to ~2 minutes)">
+        Run networkQuality
+      </button>
+    </div>
+
+    <!-- Row 4 -->
+    <div class="toplinks">
+      Raw Data: <a href="/payload" target="_blank">/payload</a> ·
+      Get Help: <a href="/help" target="_blank">/help</a>
+    </div>
+  </div>
+
+  <div id="sections"></div>
+</div>
+
+<script>
+/* =========================
+   Polling (non-overlapping)
+   ========================= */
+
+// Includes minutes (stored as seconds).
+const POLL_CHOICES = [
+  { sec: 1,   label: "1s"  },
+  { sec: 3,   label: "3s"  },
+  { sec: 5,   label: "5s"  },
+  { sec: 10,  label: "10s" },
+  { sec: 60,  label: "60s" },
+  { sec: 300, label: "5m"  },
+  { sec: 600, label: "10m" },
+];
+
+const DEFAULT_POLL_SECONDS = 5;
+const LS_POLL_KEY = "mm_poll_interval_v1";
+
+// Scheduling uses setTimeout so we can avoid overlap.
+let pollIntervalSec = DEFAULT_POLL_SECONDS;
+let pollTimeoutId = null;
+
+// In-flight / queue flags
+let refreshInFlight = false;
+let refreshQueued = false;
+
+// Hard cap so a hung request doesn't stall polling forever
+const FETCH_TIMEOUT_MS = 30_000;
+
+function labelForSec(sec){
+  const hit = POLL_CHOICES.find(x => x.sec === sec);
+  if (hit) return hit.label;
+  if (sec % 60 === 0 && sec >= 60) return `${Math.round(sec/60)}m`;
+  return `${sec}s`;
+}
+
+function setPollCurrentText(){
+  document.getElementById("pollCurrent").textContent = labelForSec(pollIntervalSec);
+}
+
+function updatePollButtons(){
+  document.querySelectorAll("[data-poll]").forEach(btn => {
+    btn.disabled = Number(btn.dataset.poll) === pollIntervalSec;
+  });
+  setPollCurrentText();
+}
+
+function clearPollTimer(){
+  if (pollTimeoutId != null){
+    clearTimeout(pollTimeoutId);
+    pollTimeoutId = null;
+  }
+}
+
+function scheduleNextPoll(){
+  clearPollTimer();
+  pollTimeoutId = setTimeout(() => {
+    // Only tick when tab is visible; keeps behavior stable + reduces load.
+    if (!document.hidden){
+      refresh({fromPoll: true});
+    } else {
+      // If hidden, reschedule a little later to re-check.
+      scheduleNextPoll();
+    }
+  }, pollIntervalSec * 1000);
+}
+
+function startPolling(sec){
+  pollIntervalSec = sec;
+  try { localStorage.setItem(LS_POLL_KEY, String(sec)); } catch(e){}
+  updatePollButtons();
+
+  // Kick immediately
+  refresh({fromPoll: true, force: true});
+}
+
+function initPollControls(){
+  const box = document.getElementById("pollButtons");
+  box.innerHTML = "";
+
+  for (const choice of POLL_CHOICES){
+    const b = document.createElement("button");
+    b.className = "btn";
+    b.textContent = choice.label;
+    b.dataset.poll = String(choice.sec);
+    b.addEventListener("click", () => startPolling(choice.sec));
+    box.appendChild(b);
+  }
+
+  let saved = NaN;
+  try { saved = Number(localStorage.getItem(LS_POLL_KEY)); } catch(e){}
+  const valid = POLL_CHOICES.some(x => x.sec === saved);
+  pollIntervalSec = valid ? saved : DEFAULT_POLL_SECONDS;
+
+  updatePollButtons();
+}
+
+/* =========================
+   Existing UI (yours)
+   ========================= */
+
+const LS_KEY = "mm_sections_open_v1";
+
+function loadOpenState(){
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); }
+  catch(e){ return {}; }
+}
+function saveOpenState(state){
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e){}
+}
+
+function el(tag, attrs={}, children=[]){
+  const n = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs)){
+    if (k === "class") n.className = v;
+    else if (k === "html") n.innerHTML = v;
+    else n.setAttribute(k, v);
+  }
+  for (const c of children) n.appendChild(c);
+  return n;
+}
+
+function esc(s){
+  return (s||"")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;");
+}
+
+function renderDetail(chk){
+  // If we have segment counts, render a colored bar in HTML.
+  if (chk.bar_free_segments != null && chk.bar_used_segments != null){
+    const lines = (chk.message || "").split("\n");
+    const barLineIdx = lines.findIndex(l => l.trim().startsWith("[") && l.trim().endsWith("]"));
+
+    const free = Number(chk.bar_free_segments) || 0;
+    const used = Number(chk.bar_used_segments) || 0;
+
+    const barHtml =
+      "[" +
+      `<span class="bar-free">${"|".repeat(free)}</span>` +
+      `<span class="bar-used">${"|".repeat(used)}</span>` +
+      "]";
+
+    if (barLineIdx >= 0){
+      lines[barLineIdx] = barHtml;
+    } else {
+      lines.push(barHtml);
+    }
+
+    // Escape only non-html lines
+    return lines.map(l => (l.includes("<span") ? l : esc(l))).join("\n");
+  }
+
+  // Fallback: plain escaped text
+  return esc(chk.message || "");
+}
+
+function drawSpark(canvas, values, status){
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+
+  if (!values || values.length < 2) return;
+
+  // Normalize to [0,1] using min/max across the history window
+  let min = Math.min(...values);
+  let max = Math.max(...values);
+  if (min === max){ max = min + 1; }
+
+  // line color based on status
+  let stroke = "#39ff14";
+  if (status === "WARN") stroke = "#ffcc00";
+  if (status === "BAD") stroke = "#ff3b3b";
+
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 2;
+
+  ctx.beginPath();
+  for (let i=0; i<values.length; i++){
+    const x = (i/(values.length-1)) * (w-2) + 1;
+    const t = (values[i] - min) / (max - min);
+    const y = (1 - t) * (h-2) + 1;
+    if (i === 0) ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+}
+
+/* =========================
+   Payload fetch (fixed)
+   ========================= */
+
+async function loadPayloadWithTimeout(){
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  try{
+    const res = await fetch("/payload", {cache:"no-store", signal: controller.signal});
+    if (!res.ok) throw new Error("Error loading payload");
+    return await res.json();
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+function render(data){
+  // This is the line you want: "YYYY... · Config: mm_config....json"
+  // Your server already provides `data.now` and `data.about` (which includes Config info).
+  document.getElementById("subline").textContent = `${data.now} · ${data.about}`;
+
+  const overall = document.getElementById("overallPill");
+  overall.textContent = data.overall;
+  overall.classList.remove("OK","WARN","BAD");
+  overall.classList.add("status-pill", data.overall);
+
+  const container = document.getElementById("sections");
+  container.innerHTML = "";
+
+  const openState = loadOpenState();
+
+  for (const sec of data.sections){
+    const secKey = sec.title;
+    const secIsOpen = openState[secKey] ?? false;
+
+    // Auto-open section if any WARN/BAD
+    const hasAlert = (sec.checks || []).some(c => c.status === "WARN" || c.status === "BAD");
+
+    const section = el("div", {class:`section ${(secIsOpen || hasAlert) ? "open" : ""}`});
+    const header = el("div", {class:"section-h"});
+    header.appendChild(el("div", {class:"name", html: esc(sec.title)}));
+    header.appendChild(el("div", {class:"meta", html: hasAlert ? "alerts" : "ok"}));
+
+    header.addEventListener("click", ()=>{
+      section.classList.toggle("open");
+      openState[secKey] = section.classList.contains("open");
+      saveOpenState(openState);
+    });
+
+    const body = el("div", {class:"section-b"});
+
+    const table = el("table");
+    const thead = el("thead");
+    const hr = el("tr");
+    hr.appendChild(el("th", {class:"col-status", html:"Status"}));
+    hr.appendChild(el("th", {html:"Check"}));
+    hr.appendChild(el("th", {class:"col-trend", html:"Trend"}));
+    hr.appendChild(el("th", {html:"Detail"}));
+    thead.appendChild(hr);
+    table.appendChild(thead);
+
+    const tbody = el("tbody");
+    for (const chk of (sec.checks || [])){
+      const tr = el("tr");
+
+      tr.appendChild(el("td", {class:`col-status st ${chk.status}`, html: esc(chk.status)}));
+      tr.appendChild(el("td", {html: esc(chk.title || "")}));
+
+      // Trend sparkline cell
+      const tdTrend = el("td", {class:"col-trend"});
+      const canvas = el("canvas", {class:"spark"});
+      canvas.width = 110;
+      canvas.height = 18;
+
+      if (chk.trend && chk.trend.length >= 2){
+        setTimeout(()=>drawSpark(canvas, chk.trend, chk.status), 0);
+      }
+      tdTrend.appendChild(canvas);
+      tr.appendChild(tdTrend);
+
+      // Detail cell with HTML-rendered bar (when available)
+      tr.appendChild(el("td", {class:"msg", html: renderDetail(chk)}));
+
+      tbody.appendChild(tr);
+    }
+
+    table.appendChild(tbody);
+    body.appendChild(table);
+
+    section.appendChild(header);
+    section.appendChild(body);
+    container.appendChild(section);
+  }
+}
+
+/**
+ * refresh({fromPoll, force})
+ * - fromPoll: called by poll loop
+ * - force: ignore in-flight guard (used when user changes interval)
+ */
+async function refresh(opts = {}){
+  const fromPoll = Boolean(opts.fromPoll);
+  const force = Boolean(opts.force);
+
+  // Prevent overlapping refreshes: if one is in-flight, queue exactly one more.
+  if (refreshInFlight && !force){
+    refreshQueued = true;
+    return;
+  }
+
+  refreshInFlight = true;
+
+  try{
+    const data = await loadPayloadWithTimeout();
+    render(data);
+  }catch(e){
+    // Keep the UI alive even on errors/timeouts.
+    const msg = (e && e.name === "AbortError")
+      ? `Timeout loading /payload after ${Math.round(FETCH_TIMEOUT_MS/1000)}s`
+      : String(e);
+
+    document.getElementById("sections").innerHTML =
+      `<div class="section"><div class="section-h"><div class="name">MacMonkey</div></div><div class="section-b" style="display:block;"><pre>${esc(msg)}</pre></div></div>`;
+  }finally{
+    refreshInFlight = false;
+
+    // If something tried to refresh while we were busy, do one catch-up refresh now.
+    if (refreshQueued){
+      refreshQueued = false;
+      refresh({fromPoll: true, force: true});
+      return;
+    }
+
+    // Only the poll loop schedules the next poll tick.
+    if (fromPoll){
+      scheduleNextPoll();
+    }
+  }
+}
+
+/* =========================
+   Action: networkQuality
+   ========================= */
+
+async function runNetworkQualityNow(){
+  if (!confirm("Run networkQuality now? This may take up to ~2 minutes.")) return;
+
+  const btn = document.getElementById("runNetworkQualityBtn");
+  const oldText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Running…";
+
+  try{
+    const res = await fetch("/action/networkquality/run", { method: "POST" });
+    if (!res.ok){
+      const t = await res.text();
+      throw new Error(t || `HTTP ${res.status}`);
+    }
+    // We don't strictly need the JSON response for UI; refresh will pull cached results.
+    await refresh({fromPoll:false, force:true});
+  }catch(e){
+    alert("Failed to run networkQuality: " + String(e));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = oldText;
+  }
+}
+
+/* =========================
+   Events + init
+   ========================= */
+
+document.getElementById("refreshBtn").addEventListener("click", ()=>refresh({fromPoll:false}));
+document.getElementById("runNetworkQualityBtn").addEventListener("click", runNetworkQualityNow);
+
+// Pause/resume polling when tab visibility changes (prevents "catch-up storm" after sleep)
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden){
+    clearPollTimer();
+  } else {
+    // If user comes back, do an immediate refresh then resume schedule.
+    refresh({fromPoll:true, force:true});
+  }
+});
+
+// Init
+initPollControls();
+refresh({fromPoll:true, force:true});
+</script>
+</body>
+</html>

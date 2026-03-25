@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.DS_Store
+mm_log.txt
+mm_config.*.json
+*.tmp
+.venv
+venv/
+env/

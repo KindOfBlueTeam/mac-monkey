@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MacMonkey Help</title>
+<style>
+  body {
+    background: #000;
+    color: #00ff66;
+    font-family: Menlo, Monaco, Consolas, monospace;
+    font-size: 14px;
+    margin: 20px;
+  }
+  h1, h2, h3 {
+    color: #66ffcc;
+  }
+  a {
+    color: #66ccff;
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+  pre {
+    background: #050505;
+    border: 1px solid #033;
+    padding: 10px;
+    overflow-x: auto;
+  }
+  ul {
+    margin-left: 20px;
+  }
+  .warn {
+    color: #ffcc00;
+  }
+  .bad {
+    color: #ff4444;
+  }
+</style>
+</head>
+
+<body>
+
+<h1>MacMonkey</h1>
+
+<p>
+MacMonkey is a local, read-only macOS monitoring tool designed for power users.
+It exposes system health via both a terminal view and a local web dashboard.
+</p>
+
+<p>
+Nothing is sent off the machine.  
+No changes are made unless <em>you</em> explicitly run commands yourself.
+</p>
+
+<hr>
+
+<h2>Running MacMonkey</h2>
+
+<h3>Web mode (default)</h3>
+
+<pre>python3 mm_main.py --mode web</pre>
+
+<p>
+Starts a local web server on:
+</p>
+
+<ul>
+  <li>Main UI: <a href="/">/</a></li>
+  <li>JSON payload: <a href="/payload">/payload</a></li>
+  <li>Help: <a href="/help">/help</a></li>
+</ul>
+
+<p>
+Default listen address:
+</p>
+
+<pre>http://127.0.0.1:8765</pre>
+
+<hr>
+
+<h3>CLI mode</h3>
+
+<pre>python3 mm_main.py --mode cli</pre>
+
+<p>
+Prints the full JSON payload to stdout.
+ANSI color is included where applicable (for terminals).
+</p>
+
+<hr>
+
+<h3>Test mode</h3>
+
+<pre>python3 mm_main.py --mode test</pre>
+
+<p>
+Runs internal checks without starting a server.
+Useful for debugging and automation.
+</p>
+
+<hr>
+
+<h2>Sections Explained</h2>
+
+<h3>Processes</h3>
+<ul>
+  <li>Shows processes exceeding CPU thresholds</li>
+  <li>Only displays the process name (not full paths)</li>
+  <li>Includes trend sparklines in the web UI</li>
+</ul>
+
+<h3>Network</h3>
+<ul>
+  <li>Default route detection</li>
+  <li>Active IPv4 interfaces</li>
+  <li>Gateway reachability</li>
+  <li>Egress TCP test</li>
+  <li>DNS resolution check</li>
+</ul>
+
+<h3>Disk</h3>
+<ul>
+  <li>Total and free space</li>
+  <li>Red/green usage bar (5% per segment)</li>
+  <li>Sparkline trend history</li>
+</ul>
+
+<h3>Mounts</h3>
+<ul>
+  <li>Checks required mount points</li>
+  <li>Useful for NAS / network shares</li>
+</ul>
+
+<h3>USB Storage</h3>
+<ul>
+  <li>Detects external USB volumes</li>
+  <li>Optional required-volume enforcement</li>
+  <li>Free space bars and trends</li>
+</ul>
+
+<h3>Time Machine</h3>
+<ul>
+  <li>Total local snapshot count</li>
+  <li>Snapshot timestamps (newest / oldest)</li>
+  <li>No automatic cleanup or deletion</li>
+</ul>
+
+<hr>
+
+<h2>Configuration</h2>
+
+<p>
+MacMonkey supports per-host configuration files.
+</p>
+
+<p>
+File naming convention:
+</p>
+
+<pre>mm_config.&lt;hostname&gt;.json</pre>
+
+<p>
+If no config file exists, built-in defaults are used and noted in the UI.
+</p>
+
+<p>
+To create or modify a config interactively:
+</p>
+
+<pre>python3 mm_setup.py</pre>
+
+<hr>
+
+<h2>Drunken Monkey Mode 🥃</h2>
+
+<p class="warn">
+<strong>Drunken Monkey mode is a simulation.</strong><br>
+It feeds mock data into the MacMonkey UI to demonstrate realistic failure cascades.
+</p>
+
+<pre>python3 mm_drunk.py</pre>
+
+<p>
+Important differences from normal MacMonkey:
+</p>
+
+<ul>
+  <li>Uses mock data only</li>
+  <li>Never touches real system state</li>
+  <li>Designed for demos, training, and screenshots</li>
+</ul>
+
+<h3>Default port</h3>
+
+<p>
+Drunken Monkey listens on a <strong>different port</strong> to avoid collisions:
+</p>
+
+<pre>http://127.0.0.1:8766</pre>
+
+<p>
+If that port is already in use, it will automatically increment
+(8767, 8768, …) and tell you which one it selected.
+</p>
+
+<h3>Playlists</h3>
+
+<p>
+Failure scenarios are grouped into playlists.
+</p>
+
+<pre>python3 mm_drunk.py --list-playlists</pre>
+
+<p>
+Start with a specific playlist:
+</p>
+
+<pre>python3 mm_drunk.py --playlist flakey_nas</pre>
+
+<h3>Drunk mode endpoints</h3>
+
+<ul>
+  <li>Main UI: <a href="/">/</a></li>
+  <li>JSON payload: <a href="/payload">/payload</a></li>
+  <li>Playlist control: <a href="/playlist">/playlist</a></li>
+  <li>Advance step: <a href="/playlist/next">/playlist/next</a></li>
+  <li>Reset playlist: <a href="/playlist/reset">/playlist/reset</a></li>
+</ul>
+
+<hr>
+
+<h2>Status Levels</h2>
+
+<ul>
+  <li><span style="color:#00ff66">OK</span> — Everything looks normal</li>
+  <li><span class="warn">WARN</span> — Degraded or approaching limits</li>
+  <li><span class="bad">BAD</span> — Immediate attention recommended</li>
+</ul>
+
+<hr>
+
+<p>
+MacMonkey is intentionally conservative:
+it reports what it can prove, and avoids guessing.
+</p>
+
+<p>
+If something is unavailable, it will say so explicitly.
+</p>
+
+</body>
+</html>
