@@ -70,7 +70,7 @@ No changes are made unless <em>you</em> explicitly run commands yourself.
 
 <pre>python3 mm_main.py --mode web</pre>
 
-<p>Open your browser to <code>http://127.0.0.1:8765</code></p>
+<p>Open your browser to <code>http://127.0.0.1:8001</code></p>
 
 <hr>
 
@@ -81,14 +81,14 @@ No changes are made unless <em>you</em> explicitly run commands yourself.
 <pre>python3 mm_main.py --mode web</pre>
 
 <p>
-Starts a local web server on <code>http://127.0.0.1:8765</code> (by default).
+Starts a local web server on <code>http://127.0.0.1:8001</code> (by default).
 </p>
 
 <h4>Web mode options:</h4>
 
 <ul>
   <li><code>--host &lt;IP&gt;</code> — Bind address (default: 127.0.0.1)</li>
-  <li><code>--port &lt;num&gt;</code> — Port number (default: 8765)</li>
+  <li><code>--port &lt;num&gt;</code> — Port number (default: 8001)</li>
   <li><code>--interval &lt;sec&gt;</code> — UI refresh interval in seconds (default: 10)</li>
   <li><code>--debug</code> — Enable debug logging</li>
 </ul>
@@ -277,8 +277,8 @@ Playlists include: <code>bad_day</code>, <code>flakey_nas</code>, <code>heavy_wo
 <h3>Default port</h3>
 
 <p>
-Listens on <code>http://127.0.0.1:8766</code> to avoid collisions with regular MacMonkey (8765).
-If that port is busy, auto-increments (8767, 8768, …).
+Listens on <code>http://127.0.0.1:8002</code> to avoid collisions with regular MacMonkey (8001).
+If that port is busy, auto-increments (8003, 8004, …).
 </p>
 
 <h3>Drunk mode endpoints</h3>
@@ -304,7 +304,7 @@ Similar to Drunken Monkey, but with a different UI and configuration options.
 <pre>python3 mm_chaos.py --playlist flakey_nas --step-seconds 10 --loop</pre>
 
 <p>
-Listens on <code>http://127.0.0.1:8766</code> by default (same as Drunken Monkey, auto-increments if busy).
+Listens on <code>http://127.0.0.1:8002</code> by default (same as Drunken Monkey, auto-increments if busy).
 </p>
 
 <hr>
@@ -341,7 +341,7 @@ Access the payload from:
 </p>
 
 <ul>
-  <li><strong>Web mode:</strong> <code>curl http://127.0.0.1:8765/payload</code></li>
+  <li><strong>Web mode:</strong> <code>curl http://127.0.0.1:8001/payload</code></li>
   <li><strong>CLI mode:</strong> <code>python3 mm_main.py --mode cli</code></li>
   <li><strong>Programmatically:</strong> <code>from mm_checks import build_payload</code></li>
 </ul>

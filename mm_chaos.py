@@ -23,7 +23,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 
 DEFAULT_HOST = "127.0.0.1"
-DEFAULT_PORT = 8766
+DEFAULT_PORT = 8002
 
 
 # ----------------------------

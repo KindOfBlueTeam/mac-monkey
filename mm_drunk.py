@@ -9,8 +9,8 @@ MacMonkey "Drunken Monkey" mode:
 - Does NOT execute remediation commands (safe for demos)
 
 Defaults:
-- Uses port 8766 by default (to avoid colliding with mm_main.py default 8765)
-- If the port is in use, auto-increments (8767, 8768, ...) until free.
+- Uses port 8002 by default (to avoid colliding with mm_main.py default 8001)
+- If the port is in use, auto-increments (8003, 8004, ...) until free.
 
 Endpoints:
   /              Web UI
@@ -23,7 +23,7 @@ Endpoints:
 Usage:
   python3 mm_drunk.py --list-playlists
   python3 mm_drunk.py --playlist flakey_nas
-  python3 mm_drunk.py --host 127.0.0.1 --port 8766 --interval 2 --playlist bad_day
+  python3 mm_drunk.py --host 127.0.0.1 --port 8002 --interval 2 --playlist bad_day
 """
 
 from __future__ import annotations
@@ -71,8 +71,8 @@ def main() -> int:
     p.add_argument(
         "--port",
         type=int,
-        default=8766,
-        help="Listen port (default: 8766 to avoid mm_main default 8765). If busy, auto-increments.",
+        default=8002,
+        help="Listen port (default: 8002 to avoid mm_main default 8001). If busy, auto-increments.",
     )
     p.add_argument("--interval", type=int, default=2, help="Seconds between automatic step advances")
     p.add_argument("--playlist", default="bad_day", help="Playlist preset name")

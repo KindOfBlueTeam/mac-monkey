@@ -11,7 +11,7 @@ Back-compat aliases:
   --web, --cli, --test  (set mode accordingly)
 
 Notes:
-  - Web server binds to host/port you specify (default 127.0.0.1:8765).
+  - Web server binds to host/port you specify (default 127.0.0.1:8001).
   - Payload generation lives in mm_checks.build_payload().
 """
 
@@ -43,8 +43,8 @@ def build_parser() -> argparse.ArgumentParser:
     # Web options
     p.add_argument("--host", default="127.0.0.1",
                    help="Web bind host (default: 127.0.0.1)")
-    p.add_argument("--port", type=int, default=8765,
-                   help="Web bind port (default: 8765)")
+    p.add_argument("--port", type=int, default=8001,
+                   help="Web bind port (default: 8001)")
     p.add_argument("--interval", type=int, default=10,
                    help="UI refresh interval seconds (default: 10)")
 
